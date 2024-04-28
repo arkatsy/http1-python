@@ -22,14 +22,18 @@ def main():
         response = None
         match basepath:
             case "": # "/"
-                logger.info("matched path '/'")
+                logger.info("matched path: '/'")
                 response = create_response()
             case "echo":
                 logger.info("matched path '/echo/:rest'")
                 echoed = "".join(rest)
                 response = create_response({"headers": {"Content-Type": "text/plain"}, "data": echoed})
+            case "user-agent":
+                logger.info("matched path: '/user-agent/:rest")
+                ua = req_info.get("headers").get("User-Agent")
+                response = create_response({"headers": {"Content-Type": "text/plain"}, "data": ua})
             case _:
-                logger.info("matched catch-all route")
+                logger.info("matched path: *")
                 response = create_response({"status_code": 404, "status": "Not Found"})
 
     conn.send(response)
@@ -54,14 +58,19 @@ def create_response(opts = {}):
 
 def parse_request(data):
     lines = data.split("\r\n")
+    logger.info(f"parsing request (lines): {lines}")
     method, path, protocol = lines[0].split(" ")
     host, port = lines[1].split(":", 1)
+    # Currently parse_headers assumes everything after the status line is just headers. No data yet.
+    headers = parse_headers(lines[2:])
+
     return {
         "method": method,
         "path": path,
         "protocol": protocol,
         "host": host,
-        "port": port
+        "port": port,
+        "headers": headers
     }
 
 def stringify_headers(headers = {}):
@@ -70,6 +79,15 @@ def stringify_headers(headers = {}):
         stringified_headers += f"{key}: {headers[key]}\r\n"
     return stringified_headers
         
+
+def parse_headers(headers_arr):
+    headers = {}
+    for header in headers_arr:
+        if not header:
+            break
+        key, value = header.split(": ", 1)
+        headers[key] = value
+    return headers
 
 def parse_path(path):
     return path.split("/")[1:]
