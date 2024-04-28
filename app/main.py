@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 def main():
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     server_socket = socket.create_server((server_ip, server_port))
+
     conn, addr = server_socket.accept()
     data = conn.recv(1024).decode()
 
